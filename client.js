@@ -149,6 +149,24 @@ window.__ModuleLoader__.load({
       return leafletPromise
     }
 
+    // 跨 180° 经线时（比如上海飞帕皮提），两点经度差看着有 270°，
+    // polyline 会朝「近的那边」绕地球一圈，线就画反了。
+    // 这里把经度接成一条不跳变的序列（可以超出 ±180），Leaflet 按世界副本画出来就是顺的。
+    function unwrapLng(points) {
+      const out = []
+      let off = 0
+      points.forEach((p, i) => {
+        let lng = p.lng + off
+        if (i > 0) {
+          const prev = out[i - 1][1]
+          while (lng - prev > 180) { off -= 360; lng -= 360 }
+          while (lng - prev < -180) { off += 360; lng += 360 }
+        }
+        out.push([p.lat, lng])
+      })
+      return out
+    }
+
     function MapView({ points, onFail }) {
       const box = useRef(null)
       const [state, setState] = useState('load')
@@ -177,7 +195,7 @@ window.__ModuleLoader__.load({
               }).addTo(map)
             })
             esri.addTo(map)
-            const ll = points.map((p) => [p.lat, p.lng])
+            const ll = unwrapLng(points)
             L.polyline(ll, { color: '#6f9dff', weight: 2.5, opacity: 0.9, dashArray: '6 8' }).addTo(map)
             const seen = new Set()
             points.forEach((p, i) => {
@@ -524,9 +542,11 @@ window.__ModuleLoader__.load({
         h(
           'div',
           { className: 'be-big' },
-          h('div', null, h('b', null, moments), h('span', null, '个时刻')),
+          h('div', null, h('b', null, moments), h('span', null, ev.planned ? '个时间点' : '个时刻')),
           h('div', null, h('b', null, ev.images.length), h('span', null, '张图')),
-          h('div', null, h('b', null, ev.groups.length), h('span', null, '段')),
+          ev.planned
+            ? h('div', null, h('b', null, ev.route.length), h('span', null, '个地点'))
+            : h('div', null, h('b', null, ev.groups.length), h('span', null, '段')),
           km ? h('div', null, h('b', null, Math.round(km)), h('span', null, '公里')) : null,
           h('div', null, h('b', null, chars), h('span', null, '字'))
         ),

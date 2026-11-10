@@ -182,6 +182,11 @@ function parseArchive(md) {
         groups.push(current)
         continue
       }
+      if (label === '状态') {
+        current = { label, kind: 'state', items: [] }
+        groups.push(current)
+        continue
+      }
       current = { label, kind: 'section', items: [] }
       groups.push(current)
       continue
@@ -251,12 +256,24 @@ function parseArchive(md) {
     }
   }
 
+  let state = ''
+  for (const g of groups) {
+    if (g.kind !== 'state') continue
+    state = g.items.map((it) => it.text).join(' ').trim()
+  }
+  // 「在计划」「想去」「待定」这类词都算还没走完
+  const planned = /计划|想去|打算|待定|规划|准备中/.test(state)
+
   return {
     title,
     intro: intro.join(' ').trim(),
-    groups: groups.filter((g) => g.kind !== 'coords' && g.kind !== 'base' && g.items.length > 0),
+    groups: groups.filter(
+      (g) => g.kind !== 'coords' && g.kind !== 'base' && g.kind !== 'state' && g.items.length > 0
+    ),
     route,
     base,
+    state,
+    planned,
   }
 }
 
@@ -369,6 +386,8 @@ async function eventDetail(root, id) {
     groups: parsed.groups,
     route: parsed.route,
     base: parsed.base,
+    state: parsed.state,
+    planned: parsed.planned,
     words: wordCount(source),
     wordsSource: '档案',
     images: await listImages(dir),
