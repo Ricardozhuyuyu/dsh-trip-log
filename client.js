@@ -98,10 +98,11 @@ window.__ModuleLoader__.load({
           strokeLinecap: 'round',
           strokeLinejoin: 'round',
         },
-        h('path', { d: 'M2.8 6.4 8.3 3.9l7.4 3.1 5.5-2.5v13.1l-5.5 2.5-7.4-3.1-5.5 2.5z' }),
-        h('path', { d: 'M8.3 3.9v13.1M15.7 7v13.1' }),
-        h('circle', { cx: 11.4, cy: 9.6, r: 1.5, fill: 'currentColor', stroke: 'none' }),
-        h('path', { d: 'M11.4 12.6v2.6' })
+        // 起点圆点 → 虚线路径 → 目的地 pin，跟 icon.svg 同一套
+        h('path', { d: 'M4.2 19.4 C 8 18.9 9.4 15.6 11.6 12.7 S 14.8 13.4 16.6 12.7', strokeDasharray: '1.6 2' }),
+        h('circle', { cx: 4.2, cy: 19.4, r: 1.65, fill: 'currentColor', stroke: 'none' }),
+        h('path', { d: 'M17.4 4.1a3.35 3.35 0 0 1 3.35 3.35c0 2.45-3.35 5.6-3.35 5.6s-3.35-3.15-3.35-5.6A3.35 3.35 0 0 1 17.4 4.1z' }),
+        h('circle', { cx: 17.4, cy: 7.45, r: 1.2 })
       )
     }
 
@@ -121,10 +122,11 @@ window.__ModuleLoader__.load({
           'aria-hidden': true,
           focusable: false,
         },
-        h('path', { d: 'M2.8 6.4 8.3 3.9l7.4 3.1 5.5-2.5v13.1l-5.5 2.5-7.4-3.1-5.5 2.5z' }),
-        h('path', { d: 'M8.3 3.9v13.1M15.7 7v13.1' }),
-        h('circle', { cx: 11.4, cy: 9.6, r: 1.5, fill: 'currentColor', stroke: 'none' }),
-        h('path', { d: 'M11.4 12.6v2.6' })
+        // 起点圆点 → 虚线路径 → 目的地 pin，跟 icon.svg 同一套
+        h('path', { d: 'M4.2 19.4 C 8 18.9 9.4 15.6 11.6 12.7 S 14.8 13.4 16.6 12.7', strokeDasharray: '1.6 2' }),
+        h('circle', { cx: 4.2, cy: 19.4, r: 1.65, fill: 'currentColor', stroke: 'none' }),
+        h('path', { d: 'M17.4 4.1a3.35 3.35 0 0 1 3.35 3.35c0 2.45-3.35 5.6-3.35 5.6s-3.35-3.15-3.35-5.6A3.35 3.35 0 0 1 17.4 4.1z' }),
+        h('circle', { cx: 17.4, cy: 7.45, r: 1.2 })
       )
     }
 
