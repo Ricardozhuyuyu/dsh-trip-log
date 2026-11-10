@@ -1,0 +1,4 @@
+- insert:
+    - id: trip-log
+      name: 'dsh-trip-log'
+      config: {}
