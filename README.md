@@ -1,5 +1,7 @@
 # 行程记录 · dsh-trip-log
 
+<img src="icon.svg" width="84" height="84" alt="" align="right" />
+
 **Turns a folder of trip notes into a timeline, route map, word cloud and photo album.**
 
 A UI plugin for DeepSeek Harness (DSH). You already wrote down what happened — in a journal, in a chat log,
