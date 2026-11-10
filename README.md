@@ -1,18 +1,27 @@
 # 行程记录 · dsh-trip-log
 
-把一趟趟出门变成一张卡：**时间线 · 路线 · 词云 · 相册 · 总结**。
+**Turns a folder of trip notes into a timeline, route map, word cloud and photo album.**
 
-给 [DeepSeek Harness](https://github.com/deepseek-harness)（DSH）用的 UI 插件。数据是你自己写的 markdown，一旅程一个目录，插件只负责读和画。
+A UI plugin for DeepSeek Harness (DSH). You already wrote down what happened — in a journal, in a chat log,
+in a folder of screenshots. Trip Log reads those notes and lays them out as five views you can actually browse.
+Your notes stay plain markdown inside your own git repo; the plugin only reads them, draws them, and
+commits your edits back when you change the intro card.
 
-## 它解决什么
+No API keys, no accounts, no backend.
+
+五个页签：**时间线 · 路线 · 词云 · 相册 · 总结**。
+
+---
+
+## What it's for
 
 出门那几天说过的话，散在聊天记录里、日记里、相册里。回头看，你想知道的是：
 
-- 那天几点在哪儿、干了什么 → **时间线**
-- 一共跑了多少公里、走过哪几个点 → **路线**
-- 那几天嘴里念得最多的是什么 → **词云**
-- 拍的照片按时刻排开 → **相册**
-- 一句话概括这趟、最舍不得的几件事 → **总结**
+- 那天几点在哪儿、干了什么 → **Timeline**
+- 一共跑了多少公里、走过哪几个点 → **Route**
+- 那几天嘴里念得最多的是什么 → **Word cloud**
+- 拍的照片按时刻排开 → **Album**
+- 一句话概括这趟、最舍不得的几件事 → **Summary**
 
 这个插件不生成内容。**它只吃你自己写的档案**，因为你记得的东西比别人总结的准。
 
@@ -21,7 +30,7 @@
 还没发 npm，从源码装：
 
 ```bash
-git clone https://github.com/<you>/dsh-trip-log.git
+git clone https://github.com/Ricardozhuyuyu/dsh-trip-log.git
 cd dsh-trip-log
 ```
 
