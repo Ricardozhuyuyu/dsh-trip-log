@@ -6,6 +6,15 @@ window.__ModuleLoader__.load({
     const h = React.createElement
 
     const CSS = `
+.be-tabs { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 10px; }
+.be-tab { font: inherit; font-size: 12px; padding: 4px 11px; border-radius: 999px; border: 1px solid color-mix(in srgb, currentColor 15%, transparent); background: transparent; color: inherit; cursor: pointer; opacity: .6; }
+.be-tab:hover { opacity: .85; }
+.be-tab[data-on="1"] { opacity: 1; background: color-mix(in srgb, currentColor 12%, transparent); border-color: color-mix(in srgb, currentColor 32%, transparent); }
+.be-badge { font-style: normal; font-size: 10px; font-weight: 600; letter-spacing: .04em; padding: 1px 6px; margin-left: 7px; border-radius: 999px; border: 1px solid currentColor; opacity: .55; vertical-align: 1px; white-space: nowrap; }
+.be-badge[data-s="规划中"] { border-style: dashed; opacity: .45; }
+.be-badge[data-s="已确定"] { opacity: .8; }
+.be-badge[data-s="行程中"] { opacity: 1; background: color-mix(in srgb, currentColor 16%, transparent); }
+.be-badge[data-s="已结束"] { opacity: .28; }
 .be-root { display: flex; height: 100%; min-height: 440px; font-size: 13px; color: inherit; overflow: hidden; }
 .be-side { width: 220px; flex: 0 0 220px; overflow-y: auto; padding: 14px 10px; border-right: 1px solid color-mix(in srgb, currentColor 10%, transparent); }
 .be-side h2 { font-size: 11px; letter-spacing: .12em; text-transform: uppercase; opacity: .5; margin: 4px 6px 10px; font-weight: 600; }
@@ -167,9 +176,19 @@ window.__ModuleLoader__.load({
       return out
     }
 
-    function MapView({ points, onFail }) {
+    function MapView({ points, focus, onFail }) {
       const box = useRef(null)
+      const mapRef = useRef(null)
+      const LRef = useRef(null)
       const [state, setState] = useState('load')
+      useEffect(() => {
+        const map = mapRef.current
+        const L = LRef.current
+        if (!map || !L) return
+        const target = focus && focus.length ? focus : points
+        if (!target || target.length < 2) return
+        map.fitBounds(L.latLngBounds(unwrapLng(target)).pad(0.24), { animate: true })
+      }, [focus, points])
       useEffect(() => {
         let map = null
         let dead = false
@@ -177,6 +196,8 @@ window.__ModuleLoader__.load({
           .then((L) => {
             if (dead || !box.current) return
             map = L.map(box.current, { scrollWheelZoom: true, worldCopyJump: true, preferCanvas: true })
+            mapRef.current = map
+            LRef.current = L
             // Esri 暗色底图：免 key、全球覆盖、海陆轮廓清楚；连不上就换 OSM
             const esri = L.tileLayer(
               'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}',
@@ -363,11 +384,55 @@ window.__ModuleLoader__.load({
       )
     }
 
+    function spanKm(a, b) {
+      const R = 6371
+      const dLat = ((b.lat - a.lat) * Math.PI) / 180
+      let dLng = b.lng - a.lng
+      if (Math.abs(dLng) > 180) dLng = dLng > 0 ? dLng - 360 : dLng + 360
+      const t =
+        Math.sin(dLat / 2) ** 2 +
+        Math.cos((a.lat * Math.PI) / 180) * Math.cos((b.lat * Math.PI) / 180) * Math.sin((dLng * Math.PI) / 360) ** 2
+      return 2 * R * Math.asin(Math.min(1, Math.sqrt(t)))
+    }
+
+    // 一摊点撒在三个大洲时，全局视野里只剩几个孤零零的像素。
+    // 按距离把点分成几团，给「全部」之外每团一个页签，点了就飞过去。
+    function clusterPoints(points, km = 160) {
+      const groups = []
+      for (const p of points) {
+        const hit = groups.find((g) => g.items.some((q) => spanKm(q, p) < km))
+        if (hit) hit.items.push(p)
+        else groups.push({ items: [p] })
+      }
+      return groups.map((g) => ({ items: g.items, label: groupLabel(g.items) }))
+    }
+
+    function groupLabel(items) {
+      const names = items.map((i) => i.name)
+      if (names.length === 1) return names[0]
+      for (let n = 4; n >= 2; n -= 1) {
+        const p = names[0].slice(0, n)
+        if (p.length === n && names.every((x) => x.startsWith(p))) return p
+      }
+      return names[0]
+    }
+
+    function Badge({ status }) {
+      if (!status) return null
+      return h('em', { className: 'be-badge', 'data-s': status }, status)
+    }
+
     function Route({ points, base }) {
       const [flat, setFlat] = useState(false)
+      const [focus, setFocus] = useState(null)
       if (!points || points.length < 2) {
         return h('div', { className: 'be-empty' }, '这趟没记坐标，画不出路线。')
       }
+      // 基地（比如上海）写在 ## 基地 里就够了，不占地图；
+      // 万一坐标里又抄了一遍，这里再挡一次
+      const drawn = base ? points.filter((p) => !p.name.startsWith(base)) : points
+      // 点分散在几片地方时，给每片一个页签；只有一片就不显示
+      const clusters = clusterPoints(drawn)
       const W = 820
       const H = 470
       const PAD = 62
@@ -479,6 +544,35 @@ window.__ModuleLoader__.load({
           h('div', null, h('b', null, seen.size), '个地方'),
           base ? h('div', null, h('b', null, base), '基地') : null
         ),
+        clusters.length > 1
+          ? h(
+              'div',
+              { className: 'be-tabs' },
+              h(
+                'button',
+                {
+                  type: 'button',
+                  className: 'be-tab',
+                  'data-on': focus ? '0' : '1',
+                  onClick: () => setFocus(null),
+                },
+                '全部'
+              ),
+              clusters.map((g, i) =>
+                h(
+                  'button',
+                  {
+                    key: i,
+                    type: 'button',
+                    className: 'be-tab',
+                    'data-on': focus === g ? '1' : '0',
+                    onClick: () => setFocus(g),
+                  },
+                  `${g.label}${g.items.length > 1 ? ` · ${g.items.length}` : ''}`
+                )
+              )
+            )
+          : null,
         flat
           ? h(
               'div',
@@ -496,7 +590,7 @@ window.__ModuleLoader__.load({
                 )
               )
             )
-          : h(MapView, { points, onFail: () => setFlat(true) }),
+          : h(MapView, { points: drawn, focus: focus ? focus.items : null, onFail: () => setFlat(true) }),
         h(
           'div',
           { className: 'be-mapnote' },
@@ -677,7 +771,7 @@ window.__ModuleLoader__.load({
                 onClick: () => setActive(ev.id),
                 type: 'button',
               },
-              h('b', null, ev.city),
+              h('b', null, ev.city, ev.status ? h(Badge, { status: ev.status }) : null),
               h('span', null, `${ev.date} · ${ev.bullets} 条 · ${ev.images ? `${ev.images} 张图` : '无图'}`)
             )
           ),
@@ -698,7 +792,7 @@ window.__ModuleLoader__.load({
                   h(
                     'header',
                     { className: 'be-head' },
-                    h('h1', null, detail.title),
+                    h('h1', null, detail.title, detail.status ? h(Badge, { status: detail.status }) : null),
                     editIntro !== null
                       ? h(
                           'div',

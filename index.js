@@ -55,6 +55,8 @@ const IMG_EXT = new Set(['.png', '.jpg', '.jpeg', '.webp', '.gif'])
 
 // 这些节不进正文：图走相册页，空清单没意思
 const SKIP_SECTIONS = new Set(['图', '记录里没有的'])
+// 「## 状态」只认这四个词，按顺序取第一个命中的
+const STATUS = ['规划中', '已确定', '行程中', '已结束']
 
 // 一行一个点：`- 名字 31.1443 121.8083`（或逗号分隔）
 const COORD_LINE = /^(.+?)\s+(-?\d{1,3}(?:\.\d+)?)\s*[,，]?\s+(-?\d{1,3}(?:\.\d+)?)\s*$/
@@ -261,8 +263,9 @@ function parseArchive(md) {
     if (g.kind !== 'state') continue
     state = g.items.map((it) => it.text).join(' ').trim()
   }
-  // 「在计划」「想去」「待定」这类词都算还没走完
-  const planned = /计划|想去|打算|待定|规划|准备中/.test(state)
+  // 四档，写别的词就按包含关系认：没写就当作「已结束」
+  const status = STATUS.find((s) => state.includes(s)) || ''
+  const planned = status === '规划中' || (!status && /计划|想去|打算|待定|规划|准备中/.test(state))
 
   return {
     title,
@@ -273,6 +276,7 @@ function parseArchive(md) {
     route,
     base,
     state,
+    status: status || (planned ? '规划中' : ''),
     planned,
   }
 }
@@ -362,6 +366,7 @@ async function listEvents(root) {
       date: date || '',
       title: parsed.title || e.name,
       intro: parsed.intro,
+      status: parsed.status,
       bullets,
       images: images.length,
       hasMaterial: await stat(path.join(dir, '素材.md')).then(() => true).catch(() => false),
@@ -387,6 +392,7 @@ async function eventDetail(root, id) {
     route: parsed.route,
     base: parsed.base,
     state: parsed.state,
+    status: parsed.status,
     planned: parsed.planned,
     words: wordCount(source),
     wordsSource: '档案',
