@@ -2,7 +2,7 @@ window.__ModuleLoader__.load({
   id: 'dsh-trip-log',
   factory(require) {
     const React = require('react')
-    const { useState, useEffect, useCallback, useRef } = React
+    const { useState, useEffect, useCallback, useMemo, useRef } = React
     const h = React.createElement
 
     const CSS = `
@@ -188,6 +188,12 @@ window.__ModuleLoader__.load({
         const target = focus && focus.length ? focus : points
         if (!target || target.length < 2) return
         map.fitBounds(L.latLngBounds(unwrapLng(target)).pad(0.24), { animate: true })
+        // 两个点挨得很近时 fitBounds 会一路顶到 19 级，那一层没有瓦片，屏幕就全黑了
+        setTimeout(() => {
+          if (!map || !map._loaded) return
+          const z = map.getZoom()
+          if (z > 15) map.setZoom(15)
+        }, 60)
       }, [focus, points])
       useEffect(() => {
         let map = null
@@ -241,7 +247,9 @@ window.__ModuleLoader__.load({
                 })
               }
             })
-            map.fitBounds(L.latLngBounds(ll).pad(0.24), { animate: false })
+            const boot = focus && focus.length ? focus : points
+            map.fitBounds(L.latLngBounds(unwrapLng(boot)).pad(0.24), { animate: false })
+            if (map.getZoom() > 15) map.setZoom(15)
             setState('ok')
           })
           .catch(() => {
@@ -425,14 +433,16 @@ window.__ModuleLoader__.load({
     function Route({ points, base }) {
       const [flat, setFlat] = useState(false)
       const [focus, setFocus] = useState(null)
+      // base / points 一变就重新算，但必须记住结果：每次渲染都新建数组的话，
+      // MapView 会以为点换了，把地图拆了重建一遍，最后停在空白上
+      const drawn = useMemo(
+        () => (base && points ? points.filter((p) => !p.name.startsWith(base)) : points || []),
+        [points, base]
+      )
+      const clusters = useMemo(() => (drawn.length >= 2 ? clusterPoints(drawn) : []), [drawn])
       if (!points || points.length < 2) {
         return h('div', { className: 'be-empty' }, '这趟没记坐标，画不出路线。')
       }
-      // 基地（比如上海）写在 ## 基地 里就够了，不占地图；
-      // 万一坐标里又抄了一遍，这里再挡一次
-      const drawn = base ? points.filter((p) => !p.name.startsWith(base)) : points
-      // 点分散在几片地方时，给每片一个页签；只有一片就不显示
-      const clusters = clusterPoints(drawn)
       const W = 820
       const H = 470
       const PAD = 62
@@ -565,7 +575,7 @@ window.__ModuleLoader__.load({
                     key: i,
                     type: 'button',
                     className: 'be-tab',
-                    'data-on': focus === g ? '1' : '0',
+                    'data-on': focus && focus.label === g.label ? '1' : '0',
                     onClick: () => setFocus(g),
                   },
                   `${g.label}${g.items.length > 1 ? ` · ${g.items.length}` : ''}`
@@ -852,7 +862,9 @@ window.__ModuleLoader__.load({
                     )
                   ),
                   tab === 'timeline' ? h(Timeline, { groups: detail.groups }) : null,
-                  tab === 'route' ? h(Route, { points: detail.route, base: detail.base }) : null,
+                  tab === 'route'
+                    ? h(Route, { key: detail.id, points: detail.route, base: detail.base })
+                    : null,
                   tab === 'cloud' ? h(Cloud, { words: detail.words, source: detail.wordsSource }) : null,
                   tab === 'gallery' ? h(Gallery, { images: detail.images, id: detail.id, onZoom: setZoom }) : null,
                   tab === 'about' ? h(Overview, { ev: detail }) : null
