@@ -221,7 +221,7 @@ window.__ModuleLoader__.load({
       )
     }
 
-    // 「本鱼记着」那一节里，一段话常被写成「引导句：」+ 若干条列表项。
+    // 「记着」那一节里，一段话常被写成「引导句：」+ 若干条列表项。
     // 直接摊开会把一件事拆成五六条，所以这里把引导句后面的从属项收拢成「（N 项）」。
     const LIST_PREFIX = /^(?:\d+[.、)]|[-·•*])\s*/
     const condense = (items) => {
@@ -493,7 +493,7 @@ window.__ModuleLoader__.load({
       const moments = items.filter((x) => x.t).length
       const chars = items.reduce((m, x) => m + (x.text ? x.text.length : 0), 0)
       const first = spoken[0]
-      // 结尾：只从时间线那几组里取最后一条——「吃了什么」「本鱼记着」排在后面但不是结尾
+      // 结尾：只从时间线那几组里取最后一条——「吃了什么」「记着」排在后面但不是结尾
       const last = (() => {
         const days = ev.groups.filter((g) => g.kind === 'day')
         const src = days.length ? days[days.length - 1] : ev.groups[0]
