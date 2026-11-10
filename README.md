@@ -34,22 +34,10 @@ git clone https://github.com/Ricardozhuyuyu/dsh-trip-log.git
 cd dsh-trip-log
 ```
 
-然后在 DSH 里装本地包（`plugin_manager install_bundle`，target 填这个目录的绝对路径），或者直接改 profile：
+然后在 DSH 里装这个目录（`plugin_manager install_bundle`，target 填**绝对路径**，比如 `/Users/you/code/dsh-trip-log`）。
+没发 npm，所以不要按包名装。
 
-```jsonc
-// ~/.dsh/profiles/<profile>/package.json
-{
-  "dsh": {
-    "profile": {
-      "bundles": [
-        "dsh-trip-log"   // 或者用本地路径
-      ]
-    }
-  }
-}
-```
-
-装完重启 DSH，左侧栏会出现「行程记录」图标。
+装完重启 DSH，左侧栏出现「行程记录」图标。
 
 ## 数据长什么样
 
