@@ -189,7 +189,16 @@ window.__ModuleLoader__.load({
                 fillColor: '#6f9dff',
                 fillOpacity: big ? 1 : 0.72,
               }).addTo(map)
-              if (fresh) m.bindTooltip(p.name, { permanent: true, direction: 'top', offset: [0, -8], className: 'be-tip' })
+              // 相邻的两个点会挤在一起，标签上下交替错开，不然会叠成一团糊字
+              if (fresh) {
+                const above = i % 2 === 0
+                m.bindTooltip(p.name, {
+                  permanent: true,
+                  direction: above ? 'top' : 'bottom',
+                  offset: above ? [0, -8] : [0, 8],
+                  className: 'be-tip',
+                })
+              }
             })
             map.fitBounds(L.latLngBounds(ll).pad(0.24), { animate: false })
             setState('ok')
